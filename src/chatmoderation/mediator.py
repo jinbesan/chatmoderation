@@ -8,6 +8,7 @@ from .models import (
     Agent2Output,
     SeverityLevel,
     SeverityTrend,
+    AdminAlertDetail,
 )
 from .state import StateTracker
 from .agent1_classifier import ConflictClassifier
@@ -52,13 +53,13 @@ class ConflictMediator:
             return None
 
         chat_context = self.state.get_chat_context()
-        rolling_window = self.state.get_rolling_window()
+        rolling_window_for_classifier = self.state.get_rolling_window()
         severity_trend = self.state.get_severity_trend()
 
         agent1_output = self.classifier.classify(
             message=message,
             chat_context=chat_context,
-            rolling_window=rolling_window,
+            rolling_window=rolling_window_for_classifier,
             severity_trend=severity_trend,
         )
 
@@ -79,10 +80,11 @@ class ConflictMediator:
                 return None
 
             severity_trend_str = current_trend.value
+            rolling_window_for_agent2 = self.state.get_rolling_window()
 
             agent2_output = self.intervention_writer.write(
                 chat_context=chat_context,
-                rolling_window=rolling_window,
+                rolling_window=rolling_window_for_agent2,
                 agent1_output=agent1_output,
                 ai_was_attacked=self.state.ai_was_attacked,
                 severity_trend=severity_trend_str,
@@ -92,23 +94,36 @@ class ConflictMediator:
                 self.state.record_ai_intervention()
 
             if agent2_output.admin_alert:
-                self._send_admin_alert(agent2_output.admin_alert)
+                alert_msg = (
+                    f"[ALERT] Severity: {agent2_output.admin_alert.severity} | "
+                    f"Summary: {agent2_output.admin_alert.summary} | "
+                    f"Time Range: {agent2_output.admin_alert.timestamp_range} | "
+                    f"Users Departed: {agent2_output.admin_alert.users_departed} | "
+                    f"AI Previously Intervened: {agent2_output.admin_alert.ai_intervened_before} | "
+                    f"AI Was Attacked: {agent2_output.admin_alert.ai_was_attacked}"
+                )
+                self._send_admin_alert(alert_msg)
 
-            if not agent2_output.chat_message and agent1_output.severity >= SeverityLevel.MEDIUM:
+            if not agent2_output.chat_message and self.state._severity_value(agent1_output.severity) >= self.state._severity_value(SeverityLevel.MEDIUM):
                 if self.state.can_send_alert():
                     self.state.record_alert_sent()
                     self._send_admin_alert(
-                        f"[AUTO-ALERT] Severity: {agent1_output.severity.value} | Trend: {severity_trend_str} | Users Left: {chat_context.users_left}"
+                        f"[AUTO-ALERT] Severity: {agent1_output.severity.value} | Trend: {severity_trend_str} | Reason: {agent1_output.reasoning}, {agent2_output.reasoning}"
                     )
 
             return agent2_output
 
-        if agent1_output.severity >= SeverityLevel.MEDIUM and agent1_output.confidence >= self.confidence_threshold:
+        if self.state._severity_value(agent1_output.severity) >= self.state._severity_value(SeverityLevel.MEDIUM) and agent1_output.confidence >= self.confidence_threshold:
             if self.state.can_send_alert():
-                self.state.record_alert_sent()
-                self._send_admin_alert(
-                    f"[AUTO-ALERT] Severity: {agent1_output.severity.value} | Confidence: {agent1_output.confidence}% | Trend: {current_trend.value} | Users Left: {chat_context.users_left}"
-                )
+                    self.state.record_alert_sent()
+                    alert_msg = (
+                        f"[AUTO-ALERT] Severity: {agent1_output.severity.value} | "
+                        f"Confidence: {agent1_output.confidence}% | "
+                        f"Trend: {current_trend.value} | "
+                        f"Reason: {agent1_output.reasoning} | "
+                        f"Users Left: {chat_context.users_left}"
+                    )
+                    self._send_admin_alert(alert_msg)
 
         return None
 
@@ -190,8 +205,9 @@ class ConflictMediator:
 
 def create_mediator(
     api_key: str,
-    model: str = "nvidia/nemotron-3-super-120b-a12b:free",
+    model: str = "llama-3.1-8b-instant",
+    base_url: str = "https://api.groq.com",
     **kwargs,
 ) -> ConflictMediator:
-    client = LLMClient(api_key=api_key, model=model)
+    client = LLMClient(api_key=api_key, base_url=base_url, model=model)
     return ConflictMediator(llm_client=client, **kwargs)

@@ -1,4 +1,4 @@
-from openai import OpenAI
+from groq import Groq
 from typing import Optional, Dict, Any, List
 import json
 
@@ -7,11 +7,11 @@ class LLMClient:
     def __init__(
         self,
         api_key: str,
-        base_url: str = "https://openrouter.ai/api/v1",
-        model: str = "nvidia/nemotron-3-super-120b-a12b:free",
-        default_temperature: float = 0.3,
+        base_url: str = "https://api.groq.com",
+        model: str = "llama-3.1-8b-instant",
+        default_temperature: float = 0.5,
     ):
-        self.client = OpenAI(
+        self.client = Groq(
             api_key=api_key,
             base_url=base_url,
         )
@@ -60,12 +60,27 @@ class LLMClient:
             temperature=temperature,
             response_format={"type": "json_object"},
         )
+        
+        if debug := True: # Set to True to enable debug logging of prompts and responses
+            # try:
+            #     print(f"[DEBUG] User prompt: {user_prompt}")
+            # except UnicodeEncodeError:
+            #     print("[DEBUG] User prompt: [Unicode content - unable to display]")
+
+
+            try:
+                print(f"[DEBUG] Raw response: {response}")
+            except UnicodeEncodeError:
+                print("[DEBUG] Raw response: [Unicode content - unable to display]")
+            except Exception:
+                print("[DEBUG] Raw response: [Error displaying response]")
+                
         if response is None:
-            return {"severity": "Medium", "confidence": 50, "intervention_needed": True, "reasoning": "Fallback due to LLM error"}
+            return {"severity": "Medium", "confidence": 50, "intervention_needed": True, "trajectory": "stable", "signals_detected": [], "reasoning": "Fallback due to LLM error"}
         try:
             return json.loads(response)
         except json.JSONDecodeError:
-            return {"severity": "Medium", "confidence": 50, "intervention_needed": True, "reasoning": "Fallback due to JSON parse error"}
+            return {"severity": "Medium", "confidence": 50, "intervention_needed": True, "trajectory": "stable", "signals_detected": [], "reasoning": "Fallback due to JSON parse error"}
 
     def chat_str(
         self,
@@ -82,6 +97,7 @@ class LLMClient:
 
 def create_client(
     api_key: str,
-    model: str = "nvidia/nemotron-3-super-120b-a12b:free",
+    base_url: str = "https://api.groq.com",
+    model: str = "llama-3.1-8b-instant",
 ) -> LLMClient:
-    return LLMClient(api_key=api_key, model=model)
+    return LLMClient(api_key=api_key, base_url=base_url, model=model)

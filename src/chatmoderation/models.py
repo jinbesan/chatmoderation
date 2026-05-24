@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional, Literal
+from typing import Optional, Literal, List
 from datetime import datetime
 from enum import Enum
 
@@ -14,7 +14,7 @@ class SeverityLevel(str, Enum):
 class SeverityTrend(str, Enum):
     STABLE = "stable"
     ESCALATING = "escalating"
-    DEESCALATING = "deescalating"
+    DEESCALATING = "de-escalating"
 
 
 class Message(BaseModel):
@@ -46,16 +46,24 @@ class Agent1Output(BaseModel):
     severity: SeverityLevel
     confidence: float = Field(ge=0, le=100)
     intervention_needed: bool
+    trajectory: Literal["stable", "escalating", "de-escalating"]
+    signals_detected: List[str]
+    reasoning: str
+
+
+class AdminAlertDetail(BaseModel):
+    severity: Literal["low", "medium", "high"]
+    summary: str
+    timestamp_range: str
+    users_departed: int
+    ai_intervened_before: bool
+    ai_was_attacked: bool
 
 
 class Agent2Output(BaseModel):
     chat_message: Optional[str] = None
-    admin_alert: Optional[str] = None
-    severity: SeverityLevel
-    timestamp: Optional[datetime] = None
-    summary: Optional[str] = None
-    users_left_count: int = 0
-    ai_intervened_before: bool = False
+    admin_alert: Optional[AdminAlertDetail] = None
+    reasoning: str
 
 
 class InterventionMode(str, Enum):

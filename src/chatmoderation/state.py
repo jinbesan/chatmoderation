@@ -79,7 +79,8 @@ class StateTracker:
 
         if self._last_intervention_time is None:
             if self._intervention_count == 0:
-                return current_severity >= SeverityLevel.MEDIUM
+                # First intervention: allow MEDIUM or HIGH
+                return self._severity_value(current_severity) >= self._severity_value(SeverityLevel.MEDIUM)
             return False
 
         elapsed = (datetime.now() - self._last_intervention_time).total_seconds()
@@ -87,6 +88,7 @@ class StateTracker:
             return False
 
         if self._intervention_count == 1:
+            # Second intervention: only allow HIGH
             return current_severity == SeverityLevel.HIGH
 
         return False
@@ -155,6 +157,9 @@ class StateTracker:
             SeverityLevel.HIGH: 3,
         }
         return mapping.get(severity, 0)
+
+    def _severity_value(self, severity: SeverityLevel) -> int:
+        return self._severity_to_int(severity)
 
     def get_last_message(self) -> Optional[TaggedMessage]:
         if self._messages:
