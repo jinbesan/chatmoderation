@@ -38,7 +38,7 @@ rolling_window_for_agent2 = self.state.get_rolling_window()
 
 **Command to verify fix**:
 ```bash
-cd /Users/swh15/Coding/chatmoderation && python -c "
+cd chatmoderation && python -c "
 import sys; sys.path.insert(0, 'src')
 from chatmoderation.llm import LLMClient
 from chatmoderation.models import Message
@@ -91,7 +91,7 @@ if self.state._severity_value(agent1_output.severity) >= self.state._severity_va
 
 **Verification Command**:
 ```bash
-cd /Users/swh15/Coding/chatmoderation && python -c "
+cd chatmoderation && python -c "
 import sys; sys.path.insert(0, 'src')
 from chatmoderation.models import SeverityLevel
 from chatmoderation.state import StateTracker
@@ -130,7 +130,7 @@ print('  HIGH >= MEDIUM:', state._severity_value(SeverityLevel.HIGH) >= state._s
 
 **Verification Command**:
 ```bash
-cd /Users/swh15/Coding/chatmoderation && python -c "
+cd chatmoderation && python -c "
 import sys; sys.path.insert(0, 'src')
 from chatmoderation.llm import LLMClient
 client = LLMClient(api_key='test-key')
@@ -181,7 +181,7 @@ Verified all fixes work together through multiple test scenarios:
 
 **Test 1: Basic Functionality**
 ```bash
-cd /Users/swh15/Coding/chatmoderation && python examples/demo.py
+cd chatmoderation && python examples/demo.py
 ```
 **Result**: Successful execution showing proper intervention triggering
 
@@ -251,5 +251,5 @@ All requested features have been implemented and verified:
 
 **The system is now production-ready and has been validated through comprehensive testing.**
 
-*History generated on: $(date)*  
+*History generated on: 5/25/2025*  
 *Session completed successfully*
