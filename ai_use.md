@@ -1,4 +1,8 @@
-# Initial prompt:
+# AI Conflict Mediator AI use history
+This project was created with the help of the open-source AI coding agent (OpenCode)[https://opencode.ai/].
+Prompts used for planning and refining the project are listed here.
+
+## Initial prompt:
 
 AI Conflict Mediator
 

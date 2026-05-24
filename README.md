@@ -242,10 +242,6 @@ If you encounter issues:
 3. Ensure all dependencies are installed correctly
 4. Verify your API key and network connectivity
 
-## License
-
-[Specify your license here]
-
 ## Acknowledgments
 
 - Thanks to the creators of the Groq API for providing fast LLM inference
